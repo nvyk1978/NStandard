@@ -21,6 +21,7 @@ jobs:
           test -f settings.gradle
           test -f build.gradle
           test -f app/build.gradle
+          test -f app/nstandard-dev.keystore
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -58,29 +59,25 @@ jobs:
           APK_DIR="app/build/outputs/apk/debug"
           APK_DST="$APK_DIR/NStandard-0.1.1-2-debug.apk"
 
-          echo "APK output directory:"
-          find "$APK_DIR" -maxdepth 1 -type f -printf '%f\n' | sort || true
-
-          if [[ -s "$APK_DST" ]]; then
-            echo "Expected APK already exists: $APK_DST"
-          else
+          if [[ ! -s "$APK_DST" ]]; then
             APK_SRC="$(find "$APK_DIR" -maxdepth 1 -type f -name '*.apk' -print -quit)"
-            if [[ -z "$APK_SRC" ]]; then
-              echo "No APK was produced in $APK_DIR" >&2
-              exit 1
-            fi
+            test -n "$APK_SRC"
             mv "$APK_SRC" "$APK_DST"
-            echo "Renamed: $APK_SRC -> $APK_DST"
           fi
+          test -s "$APK_DST"
 
-      - name: Verify APK
+      - name: Verify APK identity and signature
         shell: bash
         run: |
           set -euo pipefail
           APK="app/build/outputs/apk/debug/NStandard-0.1.1-2-debug.apk"
-          test -s "$APK"
+          AAPT="$ANDROID_SDK_ROOT/build-tools/35.0.0/aapt"
+          APKSIGNER="$ANDROID_SDK_ROOT/build-tools/35.0.0/apksigner"
 
-          BADGING="$("$ANDROID_SDK_ROOT/build-tools/35.0.0/aapt" dump badging "$APK")"
+          test -s "$APK"
+          "$APKSIGNER" verify --verbose --print-certs "$APK"
+
+          BADGING="$("$AAPT" dump badging "$APK")"
           printf '%s\n' "$BADGING" | head -n 5
           printf '%s\n' "$BADGING" | grep -F "package: name='com.cmyk.nstandard' versionCode='2' versionName='0.1.1'"
 
