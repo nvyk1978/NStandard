@@ -51,15 +51,42 @@ jobs:
           set -euo pipefail
           gradle :app:assembleDebug --stacktrace
 
+      - name: Normalize APK filename
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK_DIR="app/build/outputs/apk/debug"
+          APK_DST="$APK_DIR/NStandard-0.1.1-2-debug.apk"
+
+          echo "APK output directory:"
+          find "$APK_DIR" -maxdepth 1 -type f -printf '%f\n' | sort || true
+
+          if [[ -s "$APK_DST" ]]; then
+            echo "Expected APK already exists: $APK_DST"
+          else
+            APK_SRC="$(find "$APK_DIR" -maxdepth 1 -type f -name '*.apk' -print -quit)"
+            if [[ -z "$APK_SRC" ]]; then
+              echo "No APK was produced in $APK_DIR" >&2
+              exit 1
+            fi
+            mv "$APK_SRC" "$APK_DST"
+            echo "Renamed: $APK_SRC -> $APK_DST"
+          fi
+
       - name: Verify APK
         shell: bash
         run: |
           set -euo pipefail
-          test -f app/build/outputs/apk/debug/NStandard-0.1.0-1-debug.apk
+          APK="app/build/outputs/apk/debug/NStandard-0.1.1-2-debug.apk"
+          test -s "$APK"
+
+          BADGING="$("$ANDROID_SDK_ROOT/build-tools/35.0.0/aapt" dump badging "$APK")"
+          printf '%s\n' "$BADGING" | head -n 5
+          printf '%s\n' "$BADGING" | grep -F "package: name='com.cmyk.nstandard' versionCode='2' versionName='0.1.1'"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: NStandard-0.1.0-1-debug
-          path: app/build/outputs/apk/debug/NStandard-0.1.0-1-debug.apk
+          name: NStandard-0.1.1-2-debug
+          path: app/build/outputs/apk/debug/NStandard-0.1.1-2-debug.apk
           if-no-files-found: error
