@@ -57,7 +57,7 @@ jobs:
         run: |
           set -euo pipefail
           APK_DIR="app/build/outputs/apk/debug"
-          APK_DST="$APK_DIR/NStandard-0.1.5-6-debug.apk"
+          APK_DST="$APK_DIR/NStandard-0.1.6-7-debug.apk"
 
           if [[ ! -s "$APK_DST" ]]; then
             APK_SRC="$(find "$APK_DIR" -maxdepth 1 -type f -name '*.apk' -print -quit)"
@@ -70,7 +70,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          APK="app/build/outputs/apk/debug/NStandard-0.1.5-6-debug.apk"
+          APK="app/build/outputs/apk/debug/NStandard-0.1.6-7-debug.apk"
           AAPT="$ANDROID_SDK_ROOT/build-tools/35.0.0/aapt"
           APKSIGNER="$ANDROID_SDK_ROOT/build-tools/35.0.0/apksigner"
 
@@ -79,11 +79,11 @@ jobs:
 
           BADGING="$("$AAPT" dump badging "$APK")"
           printf '%s\n' "$BADGING" | head -n 5
-          printf '%s\n' "$BADGING" | grep -F "package: name='com.cmyk.nstandard' versionCode='6' versionName='0.1.5'"
+          printf '%s\n' "$BADGING" | grep -F "package: name='com.cmyk.nstandard' versionCode='7' versionName='0.1.6'"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: NStandard-0.1.5-6-debug
-          path: app/build/outputs/apk/debug/NStandard-0.1.5-6-debug.apk
+          name: NStandard-0.1.6-7-debug
+          path: app/build/outputs/apk/debug/NStandard-0.1.6-7-debug.apk
           if-no-files-found: error
